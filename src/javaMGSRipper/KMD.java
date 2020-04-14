@@ -41,17 +41,19 @@ public class KMD {
     int i;
     int x,y,z;
     KMDObject object;
+    //long pointer;
     
     this.m_objects.clear();
     
     try {
       stream.seek(0);
       
+      // parse header
       stream.read(b4);
-      this.m_header.setNumberOfVisibleObjects(Helper.bytesToInt(b4));
+      this.m_header.setNumberOfVisibleObjects(Helper.bytesToLong(b4));
       
       stream.read(b4);
-      this.m_header.setNumberOfObjects(Helper.bytesToInt(b4));
+      this.m_header.setNumberOfObjects(Helper.bytesToLong(b4));
 
       stream.read(b4);
       y = Helper.bytesToInt(b4);
@@ -68,21 +70,35 @@ public class KMD {
       stream.read(b4);
       x = Helper.bytesToInt(b4);      
       this.m_header.getBoundingEnd().setCoordinates(x,y,z);
-
+      
       // read all objects
       for(i=0;i<this.m_header.getNumberOfObjects();i++) {
         object = new KMDObject();
         object.read(stream);
-        this.m_objects.add(object);
+        this.m_objects.add(object);        
+        
+        /*
+        // remember pointer
+        pointer = stream.getFilePointer();
+        
+        // read vertices
+        stream.seek(object.getVerticesOffset());
+        this.readKMDVectors(stream, object.getVerticesCount(), object.getVertices());
+        
+        // return to previous pointer
+        stream.seek(pointer);
+        /**/        
       }
       
       // for each object read vertices, orders normals etc.
+      /*
       for(i=0;i<this.m_header.getNumberOfObjects();i++) {
         object = this.m_objects.elementAt(i);
         
         stream.seek(object.getVerticesOffset());
         this.readKMDVectors(stream, object.getVerticesCount(), object.getVertices());
       }
+      /**/
       
       stream.close();
     } catch (IOException e) {
@@ -90,7 +106,7 @@ public class KMD {
     }
   }
   
-  public void readKMDVectors(java.io.RandomAccessFile stream, int count, Vector<KMDVector> list) {
+  public void readKMDVectors(java.io.RandomAccessFile stream, long count, Vector<KMDVector> list) {
     int i;
     byte[] b2 = new byte[2];
     int x,y,z,w;
@@ -118,7 +134,7 @@ public class KMD {
       e.printStackTrace();
     }
   }
-  public void readKMDOrders(java.io.RandomAccessFile stream, int count, Vector<KMDOrder> list) {
+  public void readKMDOrders(java.io.RandomAccessFile stream, long count, Vector<KMDOrder> list) {
     int i;
     int a,b,c,d;
     
@@ -142,7 +158,7 @@ public class KMD {
       e.printStackTrace();
     }
   }
-  public void readKMDUVs(java.io.RandomAccessFile stream, int count, Vector<KMDUV> list) {
+  public void readKMDUVs(java.io.RandomAccessFile stream, long count, Vector<KMDUV> list) {
     int i;
     int u,v;
     
@@ -167,7 +183,8 @@ public class KMD {
     String s;
     String filename;
     
-    filename = "mouse.kmd";
+    //filename = "mouse.kmd";
+    filename = "00a.kmd";
 
     for(i=0;i<args.length;i++) {
       s = args[i];
@@ -191,7 +208,7 @@ public class KMD {
       for(i=0;i<kmd.getHeader().getNumberOfObjects();i++) {
         KMDObject object;
         object = kmd.getObjects().elementAt(i);
-        
+        System.out.println("[Object - " + Integer.toString(i) + "]");
         System.out.println("Bitflag1                  : " + object.getBitFlag1());      
         System.out.println("Bitflag2                  : " + object.getBitFlag2());      
         System.out.println("Unknown1                  : " + object.getUnknown1());      
@@ -210,11 +227,15 @@ public class KMD {
         System.out.println("UV offset                 : " + object.getUVOffset());      
         System.out.println("UV name offset            : " + object.getUVNameOffset());
         
+        /*
         System.out.println("[Vertices]");
         for(j=0;j<object.getVerticesCount();j++) {
           KMDVector v = object.getVertices().elementAt(j);
           System.out.println(j + " : " + v.toString());
         }
+        /**/
+        
+        System.out.println();
       }
     } else {
       System.out.println("MGS KMD Ripper");
@@ -226,8 +247,8 @@ public class KMD {
   public Vector<KMDObject> getObjects(){return this.m_objects;}
   
   public class KMDHeader {
-    private int m_numberOfVisibleObjects;
-    private int m_numberOfObjects;
+    private long m_numberOfVisibleObjects;
+    private long m_numberOfObjects;
     private Vector3 m_boundingStart;
     private Vector3 m_boundingEnd;
     
@@ -238,10 +259,10 @@ public class KMD {
       this.m_boundingEnd = new Vector3();
     }
         
-    public void setNumberOfVisibleObjects(int i) {this.m_numberOfVisibleObjects=i;}
-    public int getNumberOfVisibleObjects() {return this.m_numberOfVisibleObjects;}
-    public void setNumberOfObjects(int i) {this.m_numberOfObjects=i;}
-    public int getNumberOfObjects() {return this.m_numberOfObjects;}
+    public void setNumberOfVisibleObjects(long i) {this.m_numberOfVisibleObjects=i;}
+    public long getNumberOfVisibleObjects() {return this.m_numberOfVisibleObjects;}
+    public void setNumberOfObjects(long i) {this.m_numberOfObjects=i;}
+    public long getNumberOfObjects() {return this.m_numberOfObjects;}
     public Vector3 getBoundingStart() {return this.m_boundingStart;}
     public Vector3 getBoundingEnd() {return this.m_boundingEnd;}
   }
@@ -250,20 +271,20 @@ public class KMD {
     private byte m_bitFlag1;
     private byte m_bitFlag2;
     private int m_unknown1;
-    private int m_numberOfFaces;
+    private long m_numberOfFaces;
     private Vector3 m_boundingStart;
     private Vector3 m_boundingEnd;
     private Vector3 m_bone;
     private int m_parentBoneId;
-    private int m_unknown2;
-    private int m_numberOfVertices;
-    private int m_offsetVertices;
-    private int m_offsetVerticesOrder;
-    private int m_numberOfNormals;
-    private int m_offsetNormals;
-    private int m_offsetNormalsOrder;
-    private int m_offsetUV;
-    private int m_textureNameOffset;
+    private long m_unknown2;
+    private long m_numberOfVertices;
+    private long m_offsetVertices;
+    private long m_offsetVerticesOrder;
+    private long m_numberOfNormals;
+    private long m_offsetNormals;
+    private long m_offsetNormalsOrder;
+    private long m_offsetUV;
+    private long m_textureNameOffset;
     
     private Vector<KMDVector> m_vertices;
     private Vector<KMDOrder> m_verticesOrder;
@@ -297,7 +318,7 @@ public class KMD {
         this.setUnknown1(Helper.bytesToInt(b2));
         
         stream.read(b4);
-        this.setNumberOfFaces(Helper.bytesToInt(b4));
+        this.setNumberOfFaces(Helper.bytesToLong(b4));
 
         stream.read(b4);
         x = Helper.bytesToInt(b4);
@@ -330,22 +351,23 @@ public class KMD {
         this.m_unknown2 = Helper.bytesToInt(b4);
         
         stream.read(b4);
-        this.m_numberOfVertices = Helper.bytesToInt(b4);
+        this.m_numberOfVertices = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_offsetVertices = Helper.bytesToInt(b4);
+        this.m_offsetVertices = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_offsetVerticesOrder = Helper.bytesToInt(b4);
+        this.m_offsetVerticesOrder = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_numberOfNormals = Helper.bytesToInt(b4);
+        this.m_numberOfNormals = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_offsetNormals = Helper.bytesToInt(b4);
+        this.m_offsetNormals = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_offsetNormalsOrder = Helper.bytesToInt(b4);
+        this.m_offsetNormalsOrder = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_offsetUV = Helper.bytesToInt(b4);
+        this.m_offsetUV = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_textureNameOffset = Helper.bytesToInt(b4);
+        this.m_textureNameOffset = Helper.bytesToLong(b4);
         
+        stream.read(b4);
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -357,35 +379,35 @@ public class KMD {
     public byte getBitFlag2() {return this.m_bitFlag2;}
     public void setUnknown1(int i) {this.m_unknown1=i;}
     public int getUnknown1() {return this.m_unknown1;}
-    public void setNumberOfFaces(int i) {this.m_numberOfFaces=i;}
-    public int getNumberOfFaces() {return this.m_numberOfFaces;}
+    public void setNumberOfFaces(long i) {this.m_numberOfFaces=i;}
+    public long getNumberOfFaces() {return this.m_numberOfFaces;}
     public Vector3 getBoundingStart() {return this.m_boundingStart;}
     public Vector3 getBoundingEnd() {return this.m_boundingEnd;}
     public Vector3 getBone() {return this.m_bone;}
     public void setParentBoneId(int i) {this.m_parentBoneId=i;}
     public int getParentBoneId() {return this.m_parentBoneId;}
     public void setUnknown2(int i) {this.m_unknown2=i;}
-    public int getUnknown2() {return this.m_unknown2;}
+    public long getUnknown2() {return this.m_unknown2;}
 
-    public void setVerticesCount(int i) {this.m_numberOfVertices=i;}
-    public int getVerticesCount() {return this.m_numberOfVertices;}
-    public void setVerticesOffset(int i) {this.m_offsetVertices=i;}
-    public int getVerticesOffset() {return this.m_offsetVertices;}
-    public void setVerticesOrderOffset(int i) {this.m_offsetVerticesOrder=i;}
-    public int getVerticesOrderOffset() {return this.m_offsetVerticesOrder;}
+    public void setVerticesCount(long i) {this.m_numberOfVertices=i;}
+    public long getVerticesCount() {return this.m_numberOfVertices;}
+    public void setVerticesOffset(long i) {this.m_offsetVertices=i;}
+    public long getVerticesOffset() {return this.m_offsetVertices;}
+    public void setVerticesOrderOffset(long i) {this.m_offsetVerticesOrder=i;}
+    public long getVerticesOrderOffset() {return this.m_offsetVerticesOrder;}
 
-    public void setNormalCount(int i) {this.m_numberOfNormals=i;}
-    public int getNormalCount() {return this.m_numberOfNormals;}
-    public void setNormalOffset(int i) {this.m_offsetNormals=i;}
-    public int getNormalOffset() {return this.m_offsetNormals;}
-    public void setNormalOrderOffset(int i) {this.m_offsetNormalsOrder=i;}
-    public int getNormalOrderOffset() {return this.m_offsetNormalsOrder;}
+    public void setNormalCount(long i) {this.m_numberOfNormals=i;}
+    public long getNormalCount() {return this.m_numberOfNormals;}
+    public void setNormalOffset(long i) {this.m_offsetNormals=i;}
+    public long getNormalOffset() {return this.m_offsetNormals;}
+    public void setNormalOrderOffset(long i) {this.m_offsetNormalsOrder=i;}
+    public long getNormalOrderOffset() {return this.m_offsetNormalsOrder;}
 
-    public void setUVOffset(int i) {this.m_offsetUV=i;}
-    public int getUVOffset() {return this.m_offsetUV;}
+    public void setUVOffset(long i) {this.m_offsetUV=i;}
+    public long getUVOffset() {return this.m_offsetUV;}
 
-    public void setUVNameOffset(int i) {this.m_textureNameOffset=i;}
-    public int getUVNameOffset() {return this.m_textureNameOffset;}
+    public void setUVNameOffset(long i) {this.m_textureNameOffset=i;}
+    public long getUVNameOffset() {return this.m_textureNameOffset;}
     
     public Vector<KMDVector> getVertices(){return this.m_vertices;}
     public Vector<KMDOrder> getVerticesOrders(){return this.m_verticesOrder;}
