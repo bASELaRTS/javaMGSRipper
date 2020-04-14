@@ -1,6 +1,8 @@
 package javaMGSRipper;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
 
@@ -75,28 +77,22 @@ public class KMD {
       for(i=0;i<this.m_header.getNumberOfObjects();i++) {
         object = new KMDObject();
         object.read(stream);
-        this.m_objects.add(object);        
-        
-        /*
-        // remember pointer
-        pointer = stream.getFilePointer();
-        
-        // read vertices
-        stream.seek(object.getVerticesOffset());
-        this.readKMDVectors(stream, object.getVerticesCount(), object.getVertices());
-        
-        // return to previous pointer
-        stream.seek(pointer);
-        /**/        
+        this.m_objects.add(object);                
       }
       
       // for each object read vertices, orders normals etc.
-      /*
+      //*
       for(i=0;i<this.m_header.getNumberOfObjects();i++) {
         object = this.m_objects.elementAt(i);
         
         stream.seek(object.getVerticesOffset());
         this.readKMDVectors(stream, object.getVerticesCount(), object.getVertices());
+
+        stream.seek(object.getVerticesOrderOffset());
+        this.readKMDOrders(stream, object.getNumberOfFaces(), object.getVerticesOrders());
+
+        stream.seek(object.getNormalOffset());
+        this.readKMDVectors(stream, object.getNormalCount(), object.getNormals());
       }
       /**/
       
@@ -149,9 +145,9 @@ public class KMD {
         
         KMDOrder o = new KMDOrder();
         o.setOrder(0, a);
-        o.setOrder(0, b);
-        o.setOrder(0, c);
-        o.setOrder(0, d);        
+        o.setOrder(1, b);
+        o.setOrder(2, c);
+        o.setOrder(3, d);        
         list.add(o);
       }
     } catch (IOException e) {
@@ -181,15 +177,32 @@ public class KMD {
   public static void main(String[] args) {
     int i,j;
     String s;
-    String filename;
+    String filename = "00a.kmd";
     
-    //filename = "mouse.kmd";
-    filename = "00a.kmd";
-
+    int exportObjectId = -1;
+    String filenameExportObject = "object.obj";
+    
+    boolean showVertices = false;
+    boolean showVerticesOrder = false;
+    boolean showNormals = false;
+    boolean showNormalsOrder = false;
+    
     for(i=0;i<args.length;i++) {
       s = args[i];
       if (s.equals("-f")) {
         filename = args[++i];
+      } else if (s.equals("-v")) {
+        showVertices = true;
+      } else if (s.equals("-vo")) {
+        showVerticesOrder = true;
+      } else if (s.equals("-n")) {
+        showNormals = true;
+      } else if (s.equals("-no")) {
+        showNormalsOrder = true;
+      } else if (s.equals("-e")) {
+        exportObjectId = Integer.parseInt(args[++i]);
+      } else if (s.equals("-output")) {
+        filenameExportObject = args[++i];
       }
     }
     
@@ -197,45 +210,66 @@ public class KMD {
       KMD kmd = new KMD();
       kmd.load(filename);
       
-      System.out.println("[Header]");
-      System.out.println("Number of Visible Objects : " + kmd.getHeader().getNumberOfVisibleObjects());
-      System.out.println("Number of Objects         : " + kmd.getHeader().getNumberOfObjects());
-      System.out.println("Bounding box Start        : " + kmd.getHeader().getBoundingStart().toString());
-      System.out.println("Bounding box End          : " + kmd.getHeader().getBoundingEnd().toString());
-      System.out.println();
-      
-      System.out.println("[Objects]");
-      for(i=0;i<kmd.getHeader().getNumberOfObjects();i++) {
-        KMDObject object;
-        object = kmd.getObjects().elementAt(i);
-        System.out.println("[Object - " + Integer.toString(i) + "]");
-        System.out.println("Bitflag1                  : " + object.getBitFlag1());      
-        System.out.println("Bitflag2                  : " + object.getBitFlag2());      
-        System.out.println("Unknown1                  : " + object.getUnknown1());      
-        System.out.println("Faces                     : " + object.getNumberOfFaces());      
-        System.out.println("Bounding box Start        : " + object.getBoundingStart().toString());      
-        System.out.println("Bounding box End          : " + object.getBoundingEnd().toString());      
-        System.out.println("Bone                      : " + object.getBone().toString());      
-        System.out.println("Parent bone ID            : " + object.getParentBoneId());      
-        System.out.println("Unknown2                  : " + object.getUnknown2());      
-        System.out.println("Vertice count             : " + object.getVerticesCount());      
-        System.out.println("Vertice offset            : " + object.getVerticesOffset());      
-        System.out.println("Vertice order offset      : " + object.getVerticesOrderOffset());      
-        System.out.println("Normal count              : " + object.getNormalCount());      
-        System.out.println("Normal offset             : " + object.getNormalOffset());      
-        System.out.println("Normal order offset       : " + object.getNormalOrderOffset());      
-        System.out.println("UV offset                 : " + object.getUVOffset());      
-        System.out.println("UV name offset            : " + object.getUVNameOffset());
-        
-        /*
-        System.out.println("[Vertices]");
-        for(j=0;j<object.getVerticesCount();j++) {
-          KMDVector v = object.getVertices().elementAt(j);
-          System.out.println(j + " : " + v.toString());
-        }
-        /**/
-        
+      if (exportObjectId<0) {             
+        System.out.println("[Header]");
+        System.out.println("Number of Visible Objects : " + kmd.getHeader().getNumberOfVisibleObjects());
+        System.out.println("Number of Objects         : " + kmd.getHeader().getNumberOfObjects());
+        System.out.println("Bounding box Start        : " + kmd.getHeader().getBoundingStart().toString());
+        System.out.println("Bounding box End          : " + kmd.getHeader().getBoundingEnd().toString());
         System.out.println();
+        
+        System.out.println("[Objects]");
+        for(i=0;i<kmd.getHeader().getNumberOfObjects();i++) {
+          KMDObject object;
+          object = kmd.getObjects().elementAt(i);
+          System.out.println("[Object - " + Integer.toString(i) + "]");
+          System.out.println("Bitflag1                  : " + object.getBitFlag1());      
+          System.out.println("Bitflag2                  : " + object.getBitFlag2());      
+          System.out.println("Unknown1                  : " + object.getUnknown1());      
+          System.out.println("Faces                     : " + object.getNumberOfFaces());      
+          System.out.println("Bounding box Start        : " + object.getBoundingStart().toString());      
+          System.out.println("Bounding box End          : " + object.getBoundingEnd().toString());      
+          System.out.println("Bone                      : " + object.getBone().toString());      
+          System.out.println("Parent bone ID            : " + object.getParentBoneId());      
+          System.out.println("Unknown2                  : " + object.getUnknown2());      
+          System.out.println("Vertice count             : " + object.getVerticesCount());      
+          System.out.println("Vertice offset            : " + object.getVerticesOffset());      
+          System.out.println("Vertice order offset      : " + object.getVerticesOrderOffset());      
+          System.out.println("Normal count              : " + object.getNormalCount());      
+          System.out.println("Normal offset             : " + object.getNormalOffset());      
+          System.out.println("Normal order offset       : " + object.getNormalOrderOffset());      
+          System.out.println("UV offset                 : " + object.getUVOffset());      
+          System.out.println("UV name offset            : " + object.getUVNameOffset());
+          
+          if (showVertices) {
+            System.out.println("[Vertices]");
+            for(j=0;j<object.getVerticesCount();j++) {
+              KMDVector v = object.getVertices().elementAt(j);
+              System.out.println(j + " : " + v.toString());
+            }
+          }
+          
+          if (showVerticesOrder) {
+            System.out.println("[Vertices Order]");
+            for(j=0;j<object.getNumberOfFaces();j++) {
+              KMDOrder o = object.getVerticesOrders().elementAt(j);
+              System.out.println(j + " : " + o.toString());
+            }
+          }
+          
+          if (showNormals) {
+            System.out.println("[Normals]");
+            for(j=0;j<object.getNormalCount();j++) {
+              KMDVector v = object.getNormals().elementAt(j);
+              System.out.println(j + " : " + v.toString());
+            }
+          }
+  
+          System.out.println();
+        }
+      } else { // if (exportObjectId<0) {
+        KMDObject o = kmd.getObjects().elementAt(exportObjectId);
+        o.exportObj(filenameExportObject);
       }
     } else {
       System.out.println("MGS KMD Ripper");
@@ -373,6 +407,55 @@ public class KMD {
       }
     } 
         
+    public void exportObj(String filename) {
+      java.io.FileWriter fw;
+      java.io.BufferedWriter bw;
+      String line;
+      int i;
+      
+      try {
+        fw = new FileWriter(filename);
+        bw = new BufferedWriter(fw);
+        
+        for(i=0;i<this.getVerticesCount();i++) {
+          KMDVector v = this.getVertices().elementAt(i);
+          
+          line = "v ";
+          line += Double.toString(v.getPoint().x/256.0);
+          line += " ";
+          line += Double.toString(v.getPoint().y/256.0);
+          line += " ";
+          line += Double.toString(v.getPoint().z/256.0);
+          
+          bw.write(line);
+          bw.newLine();          
+        }
+        
+        for(i=0;i<this.getNumberOfFaces();i++) {
+          KMDOrder o = this.getVerticesOrders().elementAt(i);
+          
+          line = "f ";
+          line += Integer.toString(o.getOrder(0)+1);
+          line += " ";
+          line += Integer.toString(o.getOrder(1)+1);
+          line += " ";
+          line += Integer.toString(o.getOrder(2)+1);
+          line += " ";
+          line += Integer.toString(o.getOrder(3)+1);
+          
+          bw.write(line);
+          bw.newLine();          
+        }
+        
+        bw.flush();
+        bw.close();
+        fw.close();
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+    
     public void setBitFlag1(byte b) {this.m_bitFlag1=b;}
     public byte getBitFlag1() {return this.m_bitFlag1;}
     public void setBitFlag2(byte b) {this.m_bitFlag2=b;}
@@ -452,6 +535,19 @@ public class KMD {
       for(int i=0;i<4;i++) {
         this.setOrder(i,0);
       }
+    }
+    
+    public String toString() {
+      String output = "(";
+      output += Integer.toString(this.getOrder(0));
+      output += ";";
+      output += Integer.toString(this.getOrder(1));
+      output += ";";
+      output += Integer.toString(this.getOrder(2));
+      output += ";";
+      output += Integer.toString(this.getOrder(3));
+      output += ")";
+      return output;
     }
     
     public void setOrder(int index, int i) {this.m_order[index]=i;}
