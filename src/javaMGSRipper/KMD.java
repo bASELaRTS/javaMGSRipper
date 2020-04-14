@@ -177,7 +177,7 @@ public class KMD {
   public static void main(String[] args) {
     int i,j;
     String s;
-    String filename = "00a.kmd";
+    String filename = "";
     
     int exportObjectId = -1;
     String filenameExportObject = "";
@@ -185,7 +185,6 @@ public class KMD {
     boolean showVertices = false;
     boolean showVerticesOrder = false;
     boolean showNormals = false;
-    boolean showNormalsOrder = false;
     
     for(i=0;i<args.length;i++) {
       s = args[i];
@@ -197,8 +196,6 @@ public class KMD {
         showVerticesOrder = true;
       } else if (s.equals("-n")) {
         showNormals = true;
-      } else if (s.equals("-no")) {
-        showNormalsOrder = true;
       } else if (s.equals("-e")) {
         exportObjectId = Integer.parseInt(args[++i]);
       } else if (s.equals("-output")) {
@@ -277,7 +274,11 @@ public class KMD {
       }
     } else {
       System.out.println("MGS KMD Ripper");
-      System.out.println("-f <filename.dar> : opens filename.kmd");
+      System.out.println("-f <filename.kmd> : opens filename.kmd");
+      System.out.println("-e <object index> : exports object index");
+      System.out.println("-output <filename.obj> : exports -e and sets output filename");
+      System.out.println("-v                : shows vertices");
+      System.out.println("-n                : shows normals");
     }
   }
   
