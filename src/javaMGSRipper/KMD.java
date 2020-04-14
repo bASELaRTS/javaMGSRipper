@@ -180,7 +180,7 @@ public class KMD {
     String filename = "00a.kmd";
     
     int exportObjectId = -1;
-    String filenameExportObject = "object.obj";
+    String filenameExportObject = "";
     
     boolean showVertices = false;
     boolean showVerticesOrder = false;
@@ -269,7 +269,11 @@ public class KMD {
         }
       } else { // if (exportObjectId<0) {
         KMDObject o = kmd.getObjects().elementAt(exportObjectId);
-        o.exportObj(filenameExportObject);
+        if (filenameExportObject.length()>0) {
+          o.exportObj(filenameExportObject);
+        } else {
+          o.exportObj(Integer.toString(exportObjectId) + ".obj");
+        }
       }
     } else {
       System.out.println("MGS KMD Ripper");
@@ -412,6 +416,7 @@ public class KMD {
       java.io.BufferedWriter bw;
       String line;
       int i;
+      double scaleFactor = 65535;
       
       try {
         fw = new FileWriter(filename);
@@ -421,16 +426,17 @@ public class KMD {
           KMDVector v = this.getVertices().elementAt(i);
           
           line = "v ";
-          line += Double.toString(v.getPoint().x/256.0);
+          line += Double.toString(v.getPoint().x/scaleFactor);
           line += " ";
-          line += Double.toString(v.getPoint().y/256.0);
+          line += Double.toString(v.getPoint().y/scaleFactor);
           line += " ";
-          line += Double.toString(v.getPoint().z/256.0);
+          line += Double.toString(v.getPoint().z/scaleFactor);
           
           bw.write(line);
           bw.newLine();          
         }
         
+        //*
         for(i=0;i<this.getNumberOfFaces();i++) {
           KMDOrder o = this.getVerticesOrders().elementAt(i);
           
@@ -446,6 +452,7 @@ public class KMD {
           bw.write(line);
           bw.newLine();          
         }
+        /**/
         
         bw.flush();
         bw.close();
