@@ -39,8 +39,9 @@ public class KMD {
     }
   }
   public void load(java.io.RandomAccessFile stream) {
+    byte[] b2 = new byte[2];
     byte[] b4 = new byte[4];
-    int i;
+    int i,j;
     int x,y,z;
     KMDObject object;
     //long pointer;
@@ -96,6 +97,14 @@ public class KMD {
 
         stream.seek(object.getUVOffset());
         this.readKMDUVs(stream, object.getNumberOfFaces()*4, object.getUVs());
+        
+        object.getTextureIndices().clear();
+        stream.seek(object.getUVNameOffset());
+        for(j=0;j<object.getNumberOfFaces();j++) {
+          stream.read(b2);
+          x = Helper.bytesToInt(b2);
+          object.getTextureIndices().add(x);
+        }
       }
       /**/
       
@@ -141,10 +150,10 @@ public class KMD {
     
     try {        
       for(i=0;i<count;i++) {
-        a = (int)stream.readByte();
-        b = (int)stream.readByte();
-        c = (int)stream.readByte();
-        d = (int)stream.readByte();
+        a = stream.readByte()&0xff;
+        b = stream.readByte()&0xff;
+        c = stream.readByte()&0xff;
+        d = stream.readByte()&0xff;
         
         KMDOrder o = new KMDOrder();
         // anti clockwise
@@ -158,28 +167,33 @@ public class KMD {
       e.printStackTrace();
     }
   }
-  public void readKMDUVs(java.io.RandomAccessFile stream, long count, Vector<KMDUV> list) {
+  public void readKMDUVs(java.io.RandomAccessFile stream, long count, Vector<Vector2> list) {
     int i;
     int u,v;
+    byte b1,b2;
+    Vector2 v2;
     
     list.clear();
     
     try {        
       for(i=0;i<count;i++) {
-        u = (int)stream.readByte();
-        v = (int)stream.readByte();
+        b1 = stream.readByte();
+        b2 = stream.readByte();
+        u = (b1&0xff);
+        v = (b2&0xff);
         
-        KMDUV o = new KMDUV();
-        o.getPoint().setCoordinates(u, v);
-        list.add(o);
+        v2 = new Vector2();        
+        v2.setCoordinates(u, v);
+        
+        list.add(v2);
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
   
-  public static void objectInfo(KMDObject object, int index, boolean showVertices, boolean showFaceIndices, boolean showNormals, boolean showUVs) {
-    int j;
+  public static void objectInfo(KMDObject object, int index, boolean showVertices, boolean showFaceIndices, boolean showNormals, boolean showUVs, boolean showTextureIndices) {
+    int i,j;
     
     System.out.println("[Object]");
     System.out.println("Id                        : " + Integer.toString(index));
@@ -228,8 +242,16 @@ public class KMD {
     if (showUVs) {
       System.out.println("[UVs]");
       for(j=0;j<object.getUVs().size();j++) {
-        KMDUV uv = object.getUVs().elementAt(j);
-        System.out.println(j + " : " + uv.getPoint().toString());
+        Vector2 uv = object.getUVs().elementAt(j);
+        System.out.println(j + " : " + uv.toString());
+      }
+    }
+    
+    if (showTextureIndices) {
+      System.out.println("[TextureIndices]");
+      for(j=0;j<object.getTextureIndices().size();j++) {
+        i = object.getTextureIndices().elementAt(j);
+        System.out.println(j + " : " + Integer.toString(i));
       }
     }
   }
@@ -248,6 +270,7 @@ public class KMD {
     boolean showVerticesOrder = false;
     boolean showNormals = false;
     boolean showUVs = false;
+    boolean showTextureIndices = false;
     
     for(i=0;i<args.length;i++) {
       s = args[i];
@@ -261,6 +284,8 @@ public class KMD {
         showNormals = true;
       } else if (s.equals("-uv")) {
         showUVs = true;
+      } else if (s.equals("-ti")) {
+        showTextureIndices = true;
       } else if (s.equals("-id")) {
         objectId = Integer.parseInt(args[++i]);
       } else if (s.equals("-e")) {
@@ -285,12 +310,12 @@ public class KMD {
         System.out.println("[Objects]");
         if (objectId>=0) {
           object = kmd.getObjects().elementAt(objectId);
-          objectInfo(object, objectId, showVertices, showVerticesOrder, showNormals, showUVs);
+          objectInfo(object, objectId, showVertices, showVerticesOrder, showNormals, showUVs, showTextureIndices);
           System.out.println();
         } else {
           for(i=0;i<kmd.getHeader().getNumberOfObjects();i++) {
             object = kmd.getObjects().elementAt(i);
-            objectInfo(object, i, showVertices, showVerticesOrder, showNormals, showUVs);
+            objectInfo(object, i, showVertices, showVerticesOrder, showNormals, showUVs, showTextureIndices);
             System.out.println();
           }          
         }
@@ -319,6 +344,7 @@ public class KMD {
       System.out.println("-v                : shows vertices");
       System.out.println("-n                : shows normals");
       System.out.println("-uv               : shows uv coordinates");
+      System.out.println("-ti               : shows texture indices");
       System.out.println();
     }
   }
@@ -370,7 +396,8 @@ public class KMD {
     private Vector<KMDOrder> m_verticesOrder;
     private Vector<KMDVector> m_normals;
     private Vector<KMDOrder> m_normalsOrder;
-    private Vector<KMDUV> m_uvs;
+    private Vector<Vector2> m_uvs;
+    private Vector<Integer> m_textureIndices;
     
     public KMDObject() {
       this.m_boundingStart = new Vector3();
@@ -381,7 +408,8 @@ public class KMD {
       this.m_verticesOrder = new Vector<KMDOrder>();
       this.m_normals = new Vector<KMDVector>();
       this.m_normalsOrder = new Vector<KMDOrder>();      
-      this.m_uvs = new Vector<KMDUV>();
+      this.m_uvs = new Vector<Vector2>();
+      this.m_textureIndices = new Vector<Integer>();
     }
     
     public void read(java.io.RandomAccessFile stream) {
@@ -460,12 +488,17 @@ public class KMD {
       java.io.BufferedWriter bw;
       String line;
       int i;
+      Vector2 v2;
       
       try {
         fw = new FileWriter(filename);
         bw = new BufferedWriter(fw);
         
         line = "# MGS Ripper";
+        bw.write(line);
+        bw.newLine();
+        
+        line = "mtllib " + filename + ".mtl";
         bw.write(line);
         bw.newLine();
         
@@ -490,12 +523,12 @@ public class KMD {
         bw.write(line);
         bw.newLine();          
         for(i=0;i<this.getUVs().size();i++) {
-          KMDUV vt = this.getUVs().elementAt(i);
+          v2 = this.getUVs().elementAt(i);
           
           line = "vt ";
-          line += Double.toString(vt.getPoint().x);
+          line += Double.toString(v2.x/256.0);
           line += " ";
-          line += Double.toString(vt.getPoint().y);
+          line += Double.toString(v2.y/256.0);
           
           bw.write(line);
           bw.newLine();          
@@ -518,9 +551,14 @@ public class KMD {
           bw.newLine();          
         }
 
-        line = "# faces";
+        line = "# faces";        
         bw.write(line);
         bw.newLine();          
+        
+        line = "usemtl texture";        
+        bw.write(line);
+        bw.newLine();          
+
         for(i=0;i<this.getNumberOfFaces();i++) {
           KMDOrder o = this.getVerticesOrders().elementAt(i);
           
@@ -603,7 +641,8 @@ public class KMD {
     public Vector<KMDOrder> getVerticesOrders(){return this.m_verticesOrder;}
     public Vector<KMDVector> getNormals(){return this.m_normals;}
     public Vector<KMDOrder> getNormalsOrders(){return this.m_normalsOrder;}
-    public Vector<KMDUV> getUVs(){return this.m_uvs;}
+    public Vector<Vector2> getUVs(){return this.m_uvs;}
+    public Vector<Integer> getTextureIndices(){return this.m_textureIndices;}
 }
   
   public class KMDVector{
