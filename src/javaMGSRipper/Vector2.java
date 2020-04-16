@@ -22,6 +22,7 @@ public class Vector2 {
         + Double.toString(this.x) 
         + ";" 
         + Double.toString(this.y)
+        + ")"
         ;
   }  
 }

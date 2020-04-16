@@ -144,9 +144,12 @@ public class DAR {
       }
     } else {
       System.out.println("MGS DAR Ripper");
+      System.out.println("bASELaRTS 2020");
+      System.out.println();
       System.out.println("-f <filename.dar> : opens filename.dar");
       System.out.println("-e <filename.pcx> : extracts filename.pcx from DAR");
       System.out.println("-E                : extracts all files");
+      System.out.println();
     }
   }  
 }
