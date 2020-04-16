@@ -9,6 +9,10 @@ public class Vector3 {
     this.setCoordinates(0, 0, 0);
   }
   
+  public Vector3(double dx, double dy, double dz) {
+    this.setCoordinates(dx, dy, dz);
+  }
+  
   public void setCoordinates(double dx, double dy, double dz) {
     this.x = dx;
     this.y = dy;

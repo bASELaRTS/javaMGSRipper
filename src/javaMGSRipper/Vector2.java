@@ -8,6 +8,10 @@ public class Vector2 {
     this.setCoordinates(0, 0);
   }
   
+  public Vector2(double dx, double dy) {
+    this.setCoordinates(dx, dy);
+  }
+  
   public void setCoordinates(double dx, double dy) {
     this.x = dx;
     this.y = dy;
