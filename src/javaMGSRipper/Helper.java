@@ -1,6 +1,9 @@
 package javaMGSRipper;
 
 public class Helper {
+  public static double deg2rad(double d) {return (Math.PI*d)/180;}
+  public static double rad2deg(double d) {return (180/Math.PI)*d;}
+  
 	public static int bytesToInt(byte[] b) {
 		int i;
 		i = 0;
