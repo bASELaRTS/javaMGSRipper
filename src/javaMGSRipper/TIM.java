@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 
 public class TIM {
   private int m_tag;
@@ -32,20 +33,20 @@ public class TIM {
   
   public void load(String filename) {
     try {
-      this.load(new java.io.RandomAccessFile(filename, "r"));
+      this.load(new java.io.RandomAccessFile(filename, "r"),0);
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
   }
   
-  public void load(java.io.RandomAccessFile stream) {
+  public void load(java.io.RandomAccessFile stream, long offset) {
     int i,j,c;
     long l;
     byte[] b2 = new byte[2];
     byte[] b4 = new byte[4];
     
     try {
-      stream.seek(0);
+      stream.seek(offset);
 
       this.m_tag = stream.readByte()&0xff;
       this.m_version = stream.readByte()&0xff;
@@ -70,7 +71,7 @@ public class TIM {
         for(j=0;j<this.getNumberOfPalettes();j++) {
           for(i=0;i<this.getNumberOfColors();i++) {
             stream.read(b2);          
-            this.m_palette[j*this.m_numberOfPalettes+i] = Helper.bytesToInt(b2); 
+            this.m_palette[j*this.getNumberOfColors()+i] = Helper.bytesToInt(b2); 
           }
         }
       }
@@ -98,57 +99,32 @@ public class TIM {
     }
   }  
   
-  public void save(String filename) {
-    int i,j;
-    int c;
-    BufferedImage image = new BufferedImage(this.getWidth(),this.getHeight(),BufferedImage.TYPE_INT_ARGB);
-    for(j=0;j<this.getHeight();j++) {
-      for(i=0;i<this.getWidth();i++) {
-        c = this.getColor(2,this.m_data[j*this.getWidth()+i]);
-        image.setRGB(i, j, c);
-      }
-    }
+  public void save(int paletteIndex, String filename) {
     try {
-      ImageIO.write(image, "png", new File(filename));
+      ImageIO.write(this.getImage(paletteIndex), "png", new File(filename));
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
   
-  public int getColor1(int paletteIndex, int colorIndex) {
-    int color = this.m_palette[paletteIndex*this.getNumberOfPalettes()+colorIndex];
-    int a,r,g,b,c;
-    // color = A1B5G5R5;
-    a = ((color&0x8000)>>15)*255;
-    b = ((color&0x7c00)>>10)<<3;
-    g = ((color&0x03e0)>>5)<<3;
-    r = (color&0x1f)<<3;
-    c = (a<<24)|(r<<16)|(g<<8)|b;
-    return c;
-  }
-  
-  public int getColor2(int paletteIndex, int colorIndex) {
-    int color = this.m_palette[paletteIndex*this.getNumberOfPalettes()+colorIndex];
-    int a,r,g,b,c;
-    // color = A1B5G5R5;
-    a = (color&0x01)*255;
-    b = ((color>>1)&0x1f)<<3;
-    g = ((color>>6)&0x1f)<<3;
-    r = ((color>>11)&0x1f)<<3;
-    c = (a<<24)|(r<<16)|(g<<8)|b;
-    return c;
-  }
-  
   public int getColor(int paletteIndex, int colorIndex) {
-    int color = this.m_palette[paletteIndex*this.getNumberOfPalettes()+colorIndex];
-    int a,r,g,b,c;
-    // color = A1B5G5R5;
-    a = ((color>>15)&0x01)*255;
-    b = ((color>>10)&0x1f)<<3;
-    g = ((color>>5)&0x1f)<<3;
-    r = ((color)&0x1f)<<3;
-    c = (a<<24)|(r<<16)|(g<<8)|b;
-    return c;
+    int color = this.m_palette[paletteIndex*this.getNumberOfColors()+colorIndex];
+    return color;
+  }
+  
+  public BufferedImage getImage(int paletteIndex) {
+    int i,j;
+    int c;
+    Color color = new Color();
+    BufferedImage image = new BufferedImage(this.getWidth(),this.getHeight(),BufferedImage.TYPE_INT_ARGB);
+    for(j=0;j<this.getHeight();j++) {
+      for(i=0;i<this.getWidth();i++) {
+        c = this.getColor(paletteIndex,this.m_data[j*this.getWidth()+i]);
+        color.setA1B5G5R5(c);
+        image.setRGB(i, j, color.getARGB8888());
+      }
+    }
+    return image;
   }
 
   public int getTag() {return this.m_tag;}
@@ -168,8 +144,9 @@ public class TIM {
       
   public static void main(String[] args) {
     TIM tim = new TIM();
-    tim.load("G:\\Pl0\\emd0\\EM049.TIM");
-    tim.save("data\\EM049.png");
+    //tim.load("G:\\Pl0\\emd0\\EM049.TIM");
+    tim.load("G:\\Pl0\\emd0\\EM04B.TIM");
+    //tim.save("data\\EM049.png");
     System.out.println("[Header]");
     System.out.println("Tag              : " + tim.getTag());
     System.out.println("Version          : " + tim.getVersion());
@@ -187,14 +164,30 @@ public class TIM {
     System.out.println("Height           : " + tim.getHeight());  
     
     int i,j,c;
+    String s;
+    //*
+    Color color = new Color();
     if (tim.getHasPalette()) {
-      for(j=0;j<tim.getNumberOfPalettes();j++) {
-        System.out.println("[Palette" + j + "]");
-        for(i=0;i<tim.getNumberOfColors();i++) {
+      System.out.println("[Palettes]");
+      s = "";
+      for(i=0;i<tim.getNumberOfColors();i++) {
+        s = i + " : ";
+        for(j=0;j<tim.getNumberOfPalettes();j++) {
           c = tim.getColor(j, i);
-          System.out.println(i + " : " + c);
+          color.setA1B5G5R5(c);
+          s += color.toString() + " ";
         }
+        System.out.println(s);
       }
+    }
+    /**/
+
+    for(i=0;i<tim.getNumberOfPalettes();i++) {
+      ImageViewer viewer = new ImageViewer();
+      BufferedImage image = tim.getImage(i);
+      viewer.setTitle("PaletteIndex " + i + "/" + tim.getNumberOfPalettes());
+      viewer.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+      viewer.setImage(image);
     }
   }
 }
