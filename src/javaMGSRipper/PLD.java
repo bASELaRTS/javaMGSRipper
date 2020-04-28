@@ -65,7 +65,7 @@ public class PLD {
     int i;
     PLD pld = new PLD();
     String filename;
-    filename = "G:\\Pl0\\PLD\\PL00.PLD";
+    filename = "data\\PL00.PLD";
     
     pld.load(filename);
     System.out.println("[Header]");
