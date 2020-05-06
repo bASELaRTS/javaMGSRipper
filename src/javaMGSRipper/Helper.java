@@ -13,8 +13,8 @@ public class Helper {
 			i|=(b[1] & 0xff) << 8;
 			i|=(b[0] & 0xff);
 		} else if (b.length==2) {
-			i|=(b[1]) << 8;
-			i|=(b[0]);			
+			i|=(b[1] << 8);
+			i|=(b[0] & 0xff);
 		}
 		return i;
 	}

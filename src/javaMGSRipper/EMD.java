@@ -1,12 +1,8 @@
 package javaMGSRipper;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Vector;
-
-import javaMGSRipper.KMD.KMDVector;
 
 public class EMD {
   private long m_directoryOffset;
@@ -79,6 +75,7 @@ public class EMD {
         int iv1,iv2,iv3,iv4;
         int in1,in2,in3,in4;
 
+        // vertices
         offsets = modelObject.getTriangle();          
         l = directory.getOffset() + 12 + offsets.vertexOffset;          
         stream.seek(l);
@@ -88,6 +85,30 @@ public class EMD {
           stream.read(b2);z = Helper.bytesToInt(b2);
           stream.read(b2); // always zero
           mesh.getVertices().add(new Vector3(x,y,z));
+        }
+
+        // normals
+        offsets = modelObject.getTriangle();          
+        l = directory.getOffset() + 12 + offsets.normalOffset;          
+        stream.seek(l);
+        for(j=0;j<offsets.normalCount;j++) {            
+          stream.read(b2);x = Helper.bytesToInt(b2);
+          stream.read(b2);y = Helper.bytesToInt(b2);
+          stream.read(b2);z = Helper.bytesToInt(b2);
+          stream.read(b2); // always zero
+          mesh.getNormals().add(new Vector3(x,y,z));
+        }
+        
+        // uvs
+        offsets = modelObject.getTriangle();          
+        l = directory.getOffset() + 12 + offsets.textureOffset;          
+        stream.seek(l);
+        for(j=0;j<offsets.normalCount;j++) {            
+          stream.read(b2);x = Helper.bytesToInt(b2);
+          stream.read(b2);y = Helper.bytesToInt(b2);
+          stream.read(b2);z = Helper.bytesToInt(b2);
+          stream.read(b2); // always zero
+          mesh.getUVs().add(new Vector2(x,y));
         }
 
         /*
@@ -103,6 +124,7 @@ public class EMD {
         }
         /**/
         
+        // faces
         offsets = modelObject.getTriangle();
         if (offsets.faceCount>0) {
           l = directory.getOffset() + 12 + offsets.faceOffset;   
@@ -119,7 +141,7 @@ public class EMD {
             face.getPoints().add(iv2);
             face.getPoints().add(iv1);
             mesh.getFaces().add(face);
-          }
+          }          
         }
         
         offsets = modelObject.getQuad();
@@ -219,6 +241,20 @@ public class EMD {
     }
   }
   
+  public class ModelMeshFaceTriangle {
+    public Vector2 uv1;
+    public Vector2 uv2;
+    public Vector2 uv3;
+    public int clutId;
+    public int pageId;
+    
+    public ModelMeshFaceTriangle() {
+      this.uv1 = new Vector2();
+      this.uv2 = new Vector2();
+      this.uv3 = new Vector2();
+    }
+  }
+  
   public class ModelObject {
     private ModelMeshOffsets m_triangle;
     private ModelMeshOffsets m_quad;
@@ -285,7 +321,7 @@ public class EMD {
       emd.getMeshes().elementAt(i).exportObj("data//EM01E."+i+".obj");
     }
     /**/
-    i = 0;emd.getMeshes().elementAt(i).exportObj("data//EM01E."+i+".obj");
+    i = 0;emd.getMeshes().elementAt(i).saveOBJ("data//EM01E."+i+".obj");
   }
 
 }

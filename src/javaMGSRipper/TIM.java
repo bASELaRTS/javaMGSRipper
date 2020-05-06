@@ -61,27 +61,27 @@ public class TIM {
       
       stream.read(b4);this.m_imageOffset = Helper.bytesToLong(b4);
       
-      stream.read(b2);this.m_paletteOrgX = Helper.bytesToInt(b2);
-      stream.read(b2);this.m_paletteOrgY = Helper.bytesToInt(b2);
-      stream.read(b2);this.m_paletteColors = Helper.bytesToInt(b2);
-      stream.read(b2);this.m_numberOfPalettes = Helper.bytesToInt(b2);
+      stream.read(b2);this.m_paletteOrgX = Helper.bytesToUInt(b2);
+      stream.read(b2);this.m_paletteOrgY = Helper.bytesToUInt(b2);
+      stream.read(b2);this.m_paletteColors = Helper.bytesToUInt(b2);
+      stream.read(b2);this.m_numberOfPalettes = Helper.bytesToUInt(b2);
       
       if (this.m_hasCLUT) {
         this.m_palette = new int[this.m_paletteColors*this.m_numberOfPalettes];
         for(j=0;j<this.getNumberOfPalettes();j++) {
           for(i=0;i<this.getNumberOfColors();i++) {
             stream.read(b2);          
-            this.m_palette[j*this.getNumberOfColors()+i] = Helper.bytesToInt(b2); 
+            this.m_palette[j*this.getNumberOfColors()+i] = Helper.bytesToUInt(b2); 
           }
         }
       }
       
       stream.read(b4);this.m_imageSize = Helper.bytesToLong(b4);
-      stream.read(b2);this.m_imageOrgX = Helper.bytesToInt(b2);
-      stream.read(b2);this.m_imageOrgY = Helper.bytesToInt(b2);
+      stream.read(b2);this.m_imageOrgX = Helper.bytesToUInt(b2);
+      stream.read(b2);this.m_imageOrgY = Helper.bytesToUInt(b2);
       
-      stream.read(b2);this.m_imageWidth = Helper.bytesToInt(b2)*2;
-      stream.read(b2);this.m_imageHeight = Helper.bytesToInt(b2);
+      stream.read(b2);this.m_imageWidth = Helper.bytesToUInt(b2)*2;
+      stream.read(b2);this.m_imageHeight = Helper.bytesToUInt(b2);
       
       this.m_data = new int[this.getWidth()*this.getHeight()];
       for(j=0;j<this.getHeight();j++) {
@@ -145,7 +145,7 @@ public class TIM {
   public static void main(String[] args) {
     TIM tim = new TIM();
     //tim.load("G:\\Pl0\\emd0\\EM049.TIM");
-    tim.load("G:\\Pl0\\emd0\\EM04B.TIM");
+    tim.load("data/EM049.TIM");
     //tim.save("data\\EM049.png");
     System.out.println("[Header]");
     System.out.println("Tag              : " + tim.getTag());
@@ -188,6 +188,14 @@ public class TIM {
       viewer.setTitle("PaletteIndex " + i + "/" + tim.getNumberOfPalettes());
       viewer.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
       viewer.setImage(image);
+      
+      /*
+      try {
+        ImageIO.write(image, "png", new File("data/em01e." + i + ".png"));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      /**/
     }
   }
 }
