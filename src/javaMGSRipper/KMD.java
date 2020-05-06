@@ -53,10 +53,10 @@ public class KMD {
       
       // parse header
       stream.read(b4);
-      this.m_header.setNumberOfVisibleObjects(Helper.bytesToLong(b4));
+      this.m_header.setNumberOfVisibleObjects(Helper.bytesToUInt(b4));
       
       stream.read(b4);
-      this.m_header.setNumberOfObjects(Helper.bytesToLong(b4));
+      this.m_header.setNumberOfObjects(Helper.bytesToUInt(b4));
 
       stream.read(b4);
       x = Helper.bytesToInt(b4);      
@@ -425,10 +425,10 @@ public class KMD {
         this.setBitFlag2(b);
         
         stream.read(b2);
-        this.setUnknown1(Helper.bytesToInt(b2));
+        this.setUnknown1(Helper.bytesToUInt(b2));
         
         stream.read(b4);
-        this.setNumberOfFaces(Helper.bytesToLong(b4));
+        this.setNumberOfFaces(Helper.bytesToUInt(b4));
 
         stream.read(b4);
         x = Helper.bytesToInt(b4);
@@ -458,24 +458,24 @@ public class KMD {
         this.m_parentBoneId = Helper.bytesToInt(b4);
         
         stream.read(b4);
-        this.m_unknown2 = Helper.bytesToInt(b4);
+        this.m_unknown2 = Helper.bytesToUInt(b4);
         
         stream.read(b4);
-        this.m_numberOfVertices = Helper.bytesToLong(b4);
+        this.m_numberOfVertices = Helper.bytesToUInt(b4);
         stream.read(b4);
-        this.m_offsetVertices = Helper.bytesToLong(b4);
+        this.m_offsetVertices = Helper.bytesToUInt(b4);
         stream.read(b4);
-        this.m_offsetVerticesOrder = Helper.bytesToLong(b4);
+        this.m_offsetVerticesOrder = Helper.bytesToUInt(b4);
         stream.read(b4);
-        this.m_numberOfNormals = Helper.bytesToLong(b4);
+        this.m_numberOfNormals = Helper.bytesToUInt(b4);
         stream.read(b4);
-        this.m_offsetNormals = Helper.bytesToLong(b4);
+        this.m_offsetNormals = Helper.bytesToUInt(b4);
         stream.read(b4);
         this.m_offsetNormalsOrder = Helper.bytesToLong(b4);
         stream.read(b4);
-        this.m_offsetUV = Helper.bytesToLong(b4);
+        this.m_offsetUV = Helper.bytesToUInt(b4);
         stream.read(b4);
-        this.m_textureNameOffset = Helper.bytesToLong(b4);
+        this.m_textureNameOffset = Helper.bytesToUInt(b4);
         
         stream.read(b4);
       } catch (IOException e) {
@@ -498,7 +498,7 @@ public class KMD {
         bw.write(line);
         bw.newLine();
         
-        line = "mtllib " + filename + ".mtl";
+        line = "#mtllib " + filename + ".mtl";
         bw.write(line);
         bw.newLine();
         
@@ -511,7 +511,7 @@ public class KMD {
           line = "v ";
           line += Double.toString(v.getPoint().x/(double)v.getWeight());
           line += " ";
-          line += Double.toString(v.getPoint().y/(double)v.getWeight());
+          line += Double.toString((-v.getPoint().y)/(double)v.getWeight());
           line += " ";
           line += Double.toString(v.getPoint().z/(double)v.getWeight());
           
@@ -555,7 +555,7 @@ public class KMD {
         bw.write(line);
         bw.newLine();          
         
-        line = "usemtl texture";        
+        line = "#usemtl texture";        
         bw.write(line);
         bw.newLine();          
 

@@ -142,15 +142,21 @@ public class EMD2 {
     
     public Mesh getMesh() {
       int i;
+      int triCount;
       double scale = 50.0;
+      Vector4 v4;
       Mesh mesh;
       mesh = new Mesh();
       
+      
       if (this.getTriangles().faceCount>0) {
+        // triangles
         for(i=0;i<this.getTriangles().getVertices().size();i++) {
-          Vector4 v4 = this.getTriangles().getVertices().elementAt(i);
+          v4 = this.getTriangles().getVertices().elementAt(i);
           mesh.getVertices().add(new Vector3((-v4.z)/scale,(-v4.y)/scale,(-v4.x)/scale));          
         }
+        
+        // faces
         for(i=0;i<this.getTriangles().getFaces().size();i++) {
           ModelFace modelFace = this.getTriangles().getFaces().elementAt(i);
           MeshFace meshFace = new MeshFace();
@@ -162,13 +168,33 @@ public class EMD2 {
       }
       
       if (this.getQuad().faceCount>0) {
+        triCount=0;
+
+        // if no triangles vertices
+        if (mesh.getVertices().size()==0) {
+          for(i=0;i<this.getQuad().getVertices().size();i++) {
+            v4 = this.getQuad().getVertices().elementAt(i);
+            mesh.getVertices().add(new Vector3((-v4.z)/scale,(-v4.y)/scale,(-v4.x)/scale));          
+          }            
+        }        
+ 
+        // triangle vertices != quad vertices
+        if ((this.getTriangles().vertexCount!=this.getQuad().vertexCount)||(this.getTriangles().vertexOffset!=this.getQuad().vertexOffset)) {
+          triCount = this.getTriangles().getVertices().size();
+          for(i=0;i<this.getQuad().getVertices().size();i++) {
+            v4 = this.getQuad().getVertices().elementAt(i);
+            mesh.getVertices().add(new Vector3((-v4.z)/scale,(-v4.y)/scale,(-v4.x)/scale));          
+          }            
+        }
+        
+        // faces
         for(i=0;i<this.getQuad().getFaces().size();i++) {
           ModelFace modelFace = this.getQuad().getFaces().elementAt(i);
           MeshFace meshFace = new MeshFace();
-          meshFace.getPoints().add(modelFace.v2);
-          meshFace.getPoints().add(modelFace.v3);
-          meshFace.getPoints().add(modelFace.v1);
-          meshFace.getPoints().add(modelFace.v0);
+          meshFace.getPoints().add(modelFace.v2 + triCount);
+          meshFace.getPoints().add(modelFace.v3 + triCount);
+          meshFace.getPoints().add(modelFace.v1 + triCount);
+          meshFace.getPoints().add(modelFace.v0 + triCount);
           mesh.getFaces().add(meshFace);
         }
       }      
@@ -398,7 +424,6 @@ public class EMD2 {
     EMD2 emd;
     EMD2.ModelObject object;
     EMD2.ModelGeometry geometry;
-    Vector4 v4;
     
     emd = new EMD2();
     emd.load(filename);
@@ -442,46 +467,10 @@ public class EMD2 {
       System.out.println(skeleton.getPositions().elementAt(i).toString());
     }
     
-    object = emd.getModel().getObjects().elementAt(8);    
-    /*
-    System.out.println("[Vertices]");
-    geometry = object.getTriangles();
-    for(i=0;i<geometry.getVertices().size();i++) {
-      v4 = geometry.getVertices().elementAt(i);
-      System.out.println(v4.toString());
+    for(i=0;i<emd.getModel().getObjects().size();i++) {
+      object = emd.getModel().getObjects().elementAt(i);        
+      Mesh mesh = object.getMesh();
+      mesh.saveOBJ(filename + "." + i + ".obj");
     }
-    System.out.println("[Normals]");
-    geometry = object.getTriangles();
-    for(i=0;i<geometry.getNormals().size();i++) {
-      v4 = geometry.getNormals().elementAt(i);
-      System.out.println(v4.toString());
-    }
-    System.out.println("[Faces]");
-    for(i=0;i<geometry.getFaces().size();i++) {
-      EMD2.ModelFace face = geometry.getFaces().elementAt(i);
-      s = i + " :";
-      s+= " " + face.v2;
-      s+= " " + face.v1;
-      s+= " " + face.v0;
-      System.out.println(s);
-    }
-    System.out.println("[Textures]");
-    for(i=0;i<geometry.getTextures().size();i++) {
-      EMD2.ModelTexture texture = geometry.getTextures().elementAt(i);
-      s = i + " :";
-      s+= " " + texture.u0;
-      s+= " " + texture.v0;
-      s+= " " + texture.u1;
-      s+= " " + texture.v1;
-      s+= " " + texture.u2;
-      s+= " " + texture.v2;
-      s+= " " + texture.clutId;
-      s+= " " + texture.pageId;
-      System.out.println(s);
-    }
-    /**/
-    
-    Mesh mesh = object.getMesh();
-    mesh.saveOBJ("data/test.obj");
   }
 }
