@@ -126,6 +126,31 @@ public class TIM {
     }
     return image;
   }
+  
+  public BufferedImage getImageMerged() {
+    int i,j,k,p;
+    int w;
+    int c;
+    Color color = new Color();
+    BufferedImage image = new BufferedImage(this.getWidth(),this.getHeight(),BufferedImage.TYPE_INT_ARGB);
+    w = this.getWidth()/this.getNumberOfPalettes();
+    for(j=0;j<this.getHeight();j++) {
+      k = 0;
+      p = 0;
+      for(i=0;i<this.getWidth();i++) {        
+        c = this.getColor(p,this.m_data[j*this.getWidth()+i]);
+        color.setA1B5G5R5(c);
+        image.setRGB(i, j, color.getARGB8888());
+        
+        k++;
+        if (k>=w) {
+          k=0;
+          p++;
+        }
+      }
+    }
+    return image;
+  }
 
   public int getTag() {return this.m_tag;}
   public int getVersion() {return this.m_version;}
@@ -143,59 +168,70 @@ public class TIM {
   public int getHeight() {return this.m_imageHeight;}
       
   public static void main(String[] args) {
-    TIM tim = new TIM();
-    //tim.load("G:\\Pl0\\emd0\\EM049.TIM");
-    tim.load("data/EM049.TIM");
-    //tim.save("data\\EM049.png");
-    System.out.println("[Header]");
-    System.out.println("Tag              : " + tim.getTag());
-    System.out.println("Version          : " + tim.getVersion());
-    System.out.println("BPPCode          : " + tim.getBPP());
-    System.out.println("HasPalette       : " + tim.getHasPalette());    
-    System.out.println("ImageOffset      : " + tim.getImageOffset());
-    System.out.println("PaletteOrgX      : " + tim.getPaletteOrgX());
-    System.out.println("PaletteOrgY      : " + tim.getPaletteOrgY());
-    System.out.println("NumberOfColors   : " + tim.getNumberOfColors());
-    System.out.println("NumberOfPalettes : " + tim.getNumberOfPalettes());    
-    System.out.println("ImageSize        : " + tim.getImageSize());    
-    System.out.println("ImageOrgX        : " + tim.getImageOrgX());    
-    System.out.println("ImageOrgY        : " + tim.getImageOrgY());    
-    System.out.println("Width            : " + tim.getWidth());    
-    System.out.println("Height           : " + tim.getHeight());  
-    
-    int i,j,c;
+    int i;
     String s;
-    //*
-    Color color = new Color();
-    if (tim.getHasPalette()) {
-      System.out.println("[Palettes]");
-      s = "";
-      for(i=0;i<tim.getNumberOfColors();i++) {
-        s = i + " : ";
-        for(j=0;j<tim.getNumberOfPalettes();j++) {
-          c = tim.getColor(j, i);
-          color.setA1B5G5R5(c);
-          s += color.toString() + " ";
-        }
-        System.out.println(s);
+    String filename = "";
+    String outputFilename = "";
+    boolean showImage = false;
+    boolean exportImage = false;
+    TIM tim;       
+    
+    for(i=0;i<args.length;i++) {
+      s = args[i];
+      if (s.equals("-f")) {
+        filename = args[++i];
+      } else if (s.equals("-v")) {
+        showImage = true;
+      } else if (s.equals("-e")) {
+        exportImage = true;
+      } else if (s.equals("-output")) {
+        outputFilename = args[++i];
       }
     }
-    /**/
-
-    for(i=0;i<tim.getNumberOfPalettes();i++) {
-      ImageViewer viewer = new ImageViewer();
-      BufferedImage image = tim.getImage(i);
-      viewer.setTitle("PaletteIndex " + i + "/" + tim.getNumberOfPalettes());
-      viewer.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-      viewer.setImage(image);
+    
+    if (filename.length()>0) {
+      tim = new TIM();
+      tim.load(filename);
+      System.out.println("[Header]");
+      System.out.println("Tag              : " + tim.getTag());
+      System.out.println("Version          : " + tim.getVersion());
+      System.out.println("BPPCode          : " + tim.getBPP());
+      System.out.println("HasPalette       : " + tim.getHasPalette());    
+      System.out.println("ImageOffset      : " + tim.getImageOffset());
+      System.out.println("PaletteOrgX      : " + tim.getPaletteOrgX());
+      System.out.println("PaletteOrgY      : " + tim.getPaletteOrgY());
+      System.out.println("NumberOfColors   : " + tim.getNumberOfColors());
+      System.out.println("NumberOfPalettes : " + tim.getNumberOfPalettes());    
+      System.out.println("ImageSize        : " + tim.getImageSize());    
+      System.out.println("ImageOrgX        : " + tim.getImageOrgX());    
+      System.out.println("ImageOrgY        : " + tim.getImageOrgY());    
+      System.out.println("Width            : " + tim.getWidth());    
+      System.out.println("Height           : " + tim.getHeight());  
       
-      /*
-      try {
-        ImageIO.write(image, "png", new File("data/em01e." + i + ".png"));
-      } catch (IOException e) {
-        e.printStackTrace();
+      if (showImage) {
+        ImageViewer viewer = new ImageViewer();
+        viewer.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        viewer.setImage(tim.getImageMerged());
       }
-      /**/
+      
+      if (exportImage) {
+        if (outputFilename.length()==0) {
+          outputFilename = filename + ".png";
+        }        
+        try {
+          ImageIO.write(tim.getImageMerged(), "png", new File(outputFilename));
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    } else {
+      System.out.println("TIM Ripper");
+      System.out.println("bASELaRTS 2020");
+      System.out.println();
+      System.out.println("-f <filename.tim> : opens filename.tim");
+      System.out.println("-e                : exports image");
+      System.out.println("-output <abc.png> : sets export image name");
+      System.out.println();
     }
   }
 }

@@ -25,7 +25,8 @@ public class EMD2 {
   }
   
   public void load(java.io.RandomAccessFile stream) {
-    int i;
+    int i,j;
+    long o;
     double x,y,z;
     byte b2[] = new byte[2];
     byte b4[] = new byte[4];
@@ -57,6 +58,12 @@ public class EMD2 {
           stream.read(b2);y=Helper.bytesToInt(b2);
           stream.read(b2);z=Helper.bytesToInt(b2);
           this.m_skeleton.getPositions().add(new Vector3(x,y,z));
+        }
+        
+        for(i=0;i<this.m_skeleton.count;i++) {
+          stream.read(b2);j=Helper.bytesToUInt(b2);
+          stream.read(b2);o=Helper.bytesToUInt(b2);
+          this.m_skeleton.getArmatures().add(new Armature(j,o));
         }
       }
       
@@ -140,20 +147,32 @@ public class EMD2 {
       this.getQuad().read(stream);
     }
     
-    public Mesh getMesh() {
+    public Mesh getMesh(int textureWidth, int textureHeight) {
       int i;
       int triCount;
+      int triTextureCount;
+      int offset;
       double scale = 50.0;
       Vector4 v4;
       Mesh mesh;
+      ModelTexture texture;
       mesh = new Mesh();
-      
-      
+            
       if (this.getTriangles().faceCount>0) {
         // triangles
         for(i=0;i<this.getTriangles().getVertices().size();i++) {
           v4 = this.getTriangles().getVertices().elementAt(i);
           mesh.getVertices().add(new Vector3((-v4.z)/scale,(-v4.y)/scale,(-v4.x)/scale));          
+        }
+        
+        // uvs
+        for(i=0;i<this.getTriangles().getTextures().size();i++) {
+          texture = this.getTriangles().getTextures().elementAt(i);
+          offset = texture.pageId & 0x3f;
+          offset = offset<<(6+1);
+          mesh.getUVs().add(new Vector2((offset + texture.u0)/(double)textureWidth, 1.0 - (texture.v0/(double)textureHeight)));
+          mesh.getUVs().add(new Vector2((offset + texture.u1)/(double)textureWidth, 1.0 - (texture.v1/(double)textureHeight)));
+          mesh.getUVs().add(new Vector2((offset + texture.u2)/(double)textureWidth, 1.0 - (texture.v2/(double)textureHeight)));
         }
         
         // faces
@@ -163,6 +182,9 @@ public class EMD2 {
           meshFace.getPoints().add(modelFace.v2);
           meshFace.getPoints().add(modelFace.v1);
           meshFace.getPoints().add(modelFace.v0);
+          meshFace.getUVs().add(i*3+2);
+          meshFace.getUVs().add(i*3+1);
+          meshFace.getUVs().add(i*3+0);
           mesh.getFaces().add(meshFace);
         }   
       }
@@ -186,8 +208,21 @@ public class EMD2 {
             mesh.getVertices().add(new Vector3((-v4.z)/scale,(-v4.y)/scale,(-v4.x)/scale));          
           }            
         }
+
+        // uvs
+        triTextureCount = mesh.getUVs().size();
+        for(i=0;i<this.getQuad().getTextures().size();i++) {
+          texture = this.getQuad().getTextures().elementAt(i);
+          offset = texture.pageId & 0x3f;
+          offset = offset<<(6+1);
+          mesh.getUVs().add(new Vector2((offset + texture.u0)/(double)textureWidth, 1.0 - (texture.v0/(double)textureHeight)));
+          mesh.getUVs().add(new Vector2((offset + texture.u1)/(double)textureWidth, 1.0 - (texture.v1/(double)textureHeight)));
+          mesh.getUVs().add(new Vector2((offset + texture.u2)/(double)textureWidth, 1.0 - (texture.v2/(double)textureHeight)));
+          mesh.getUVs().add(new Vector2((offset + texture.u3)/(double)textureWidth, 1.0 - (texture.v3/(double)textureHeight)));
+        }        
         
         // faces
+        
         for(i=0;i<this.getQuad().getFaces().size();i++) {
           ModelFace modelFace = this.getQuad().getFaces().elementAt(i);
           MeshFace meshFace = new MeshFace();
@@ -195,6 +230,10 @@ public class EMD2 {
           meshFace.getPoints().add(modelFace.v3 + triCount);
           meshFace.getPoints().add(modelFace.v1 + triCount);
           meshFace.getPoints().add(modelFace.v0 + triCount);
+          meshFace.getUVs().add((i*4+2) + triTextureCount);
+          meshFace.getUVs().add((i*4+3) + triTextureCount);
+          meshFace.getUVs().add((i*4+1) + triTextureCount);
+          meshFace.getUVs().add((i*4+0) + triTextureCount);
           mesh.getFaces().add(meshFace);
         }
       }      
@@ -409,68 +448,119 @@ public class EMD2 {
     public int size;  
     
     private Vector<Vector3> m_positions;
+    private Vector<Armature> m_armatures;
+    private Vector<Integer> m_meshes;
     
     public ModelSkeleton() {
       this.m_positions = new Vector<Vector3>();
+      this.m_armatures = new Vector<Armature>();
+      this.m_meshes = new Vector<Integer>();
     }
     
     public Vector<Vector3> getPositions(){return this.m_positions;}
+    public Vector<Armature> getArmatures(){return this.m_armatures;}
+    public Vector<Integer> getMeshes(){return this.m_meshes;}
+    
+  }  
+
+  public class Armature {
+    public int count;   // number of meshes linked to this one
+    public long offset; // relative offset to mesh numbers
+    
+    public Armature(int c, long o){
+      this.count=c;
+      this.offset=o;
+    }
   }
   
   public static void main(String[] args) {
     int i;
+    int id = -1;
     String s;
     String filename = "data/em04f.emd";
     EMD2 emd;
     EMD2.ModelObject object;
     EMD2.ModelGeometry geometry;
     
-    emd = new EMD2();
-    emd.load(filename);
-    
-    System.out.println("[Directories]");
-    for(i=0;i<emd.getDirectories().size();i++) {
-      EMD2.Directory directory = emd.getDirectories().elementAt(i);
-      System.out.println(i + " : " + directory.offset);
+    for(i=0;i<args.length;i++) {
+      s = args[i];
+      if (s.equals("-f")) {
+        filename = args[++i];
+      } else if (s.equals("-id")) {
+        id = Integer.parseInt(args[++i]);
+      }
     }
     
-    System.out.println("[Model]");
-    System.out.println("Length : " + emd.getModel().length);
-    System.out.println("Count : " + emd.getModel().count);
-    for(i=0;i<emd.getModel().getObjects().size();i++) {
-      object = emd.getModel().getObjects().elementAt(i);
-      geometry = object.getTriangles();
-      s = i + " :T:";
-      s+=" VC=" + geometry.vertexCount;
-      s+=" VO=" + geometry.vertexOffset;
-      s+=" NC=" + geometry.normalCount;
-      s+=" NO=" + geometry.normalOffset;
-      s+=" FC=" + geometry.faceCount;
-      s+=" FO=" + geometry.faceOffset;
-      s+=" TO=" + geometry.textureOffset;      
-      System.out.println(s);
+    if (filename.length()>0) {
+      emd = new EMD2();
+      emd.load(filename);
       
-      geometry = object.getQuad();
-      s = i + " :Q:";
-      s+=" VC=" + geometry.vertexCount;
-      s+=" VO=" + geometry.vertexOffset;
-      s+=" NC=" + geometry.normalCount;
-      s+=" NO=" + geometry.normalOffset;
-      s+=" FC=" + geometry.faceCount;
-      s+=" FO=" + geometry.faceOffset;
-      s+=" TO=" + geometry.textureOffset;      
-      System.out.println(s);
-    }
+      System.out.println("[Directories]");
+      for(i=0;i<emd.getDirectories().size();i++) {
+        EMD2.Directory directory = emd.getDirectories().elementAt(i);
+        System.out.println(i + " : " + directory.offset);
+      }
+      
+      System.out.println("[Model]");
+      System.out.println("Length : " + emd.getModel().length);
+      System.out.println("Count : " + emd.getModel().count);
+      for(i=0;i<emd.getModel().getObjects().size();i++) {
+        object = emd.getModel().getObjects().elementAt(i);
+        geometry = object.getTriangles();
+        s = i + " :T:";
+        s+=" VC=" + geometry.vertexCount;
+        s+=" VO=" + geometry.vertexOffset;
+        s+=" NC=" + geometry.normalCount;
+        s+=" NO=" + geometry.normalOffset;
+        s+=" FC=" + geometry.faceCount;
+        s+=" FO=" + geometry.faceOffset;
+        s+=" TO=" + geometry.textureOffset;      
+        System.out.println(s);
+        
+        geometry = object.getQuad();
+        s = i + " :Q:";
+        s+=" VC=" + geometry.vertexCount;
+        s+=" VO=" + geometry.vertexOffset;
+        s+=" NC=" + geometry.normalCount;
+        s+=" NO=" + geometry.normalOffset;
+        s+=" FC=" + geometry.faceCount;
+        s+=" FO=" + geometry.faceOffset;
+        s+=" TO=" + geometry.textureOffset;      
+        System.out.println(s);
+      }
 
-    ModelSkeleton skeleton = emd.getSkeleton();
-    for(i=0;i<skeleton.getPositions().size();i++) {
-      System.out.println(skeleton.getPositions().elementAt(i).toString());
-    }
-    
-    for(i=0;i<emd.getModel().getObjects().size();i++) {
-      object = emd.getModel().getObjects().elementAt(i);        
-      Mesh mesh = object.getMesh();
-      mesh.saveOBJ(filename + "." + i + ".obj");
+      ModelTexture texture;
+      if (id>=0) {
+        object = emd.getModel().getObjects().elementAt(id);
+        for(i=0;i<object.getTriangles().getTextures().size();i++) {
+          texture = object.getTriangles().getTextures().elementAt(i);
+          s = "" + i;
+          s += " (" + texture.u0 + ";" + texture.v0 + ")";
+          s += " (" + texture.u1 + ";" + texture.v1 + ")";
+          s += " (" + texture.u2 + ";" + texture.v2 + ")";
+          s += " " + texture.clutId;
+          s += " " + texture.pageId;
+          System.out.println(s);
+        }
+      }      
+      
+      //*
+      ModelSkeleton skeleton = emd.getSkeleton();
+      for(i=0;i<skeleton.count;i++) {
+        s = "" + i;
+        s += " " + skeleton.getPositions().elementAt(i).toString();
+        s += " " + skeleton.getArmatures().elementAt(i).count + ";" + skeleton.getArmatures().elementAt(i).offset;
+        System.out.println(s);
+      }
+      /**/
+      
+      /*
+      for(i=0;i<emd.getModel().getObjects().size();i++) {
+        object = emd.getModel().getObjects().elementAt(i);        
+        Mesh mesh = object.getMesh(256,256);
+        mesh.saveOBJ(filename + "." + i + ".obj");
+      }
+      /**/
     }
   }
 }

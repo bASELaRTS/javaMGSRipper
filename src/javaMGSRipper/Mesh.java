@@ -33,6 +33,11 @@ public class Mesh {
       fw = new FileWriter(filename);
       bw = new BufferedWriter(fw);
       
+      line = "mtllib material.mtl";
+      bw.write(line);
+      bw.newLine();         
+      
+      
       line = "# vertices (" + this.getVertices().size() + ")";
       bw.write(line);
       bw.newLine();         
@@ -83,6 +88,9 @@ public class Mesh {
         bw.newLine();                  
       }
       
+      line = "usemtl texture";
+      bw.write(line);
+      bw.newLine();         
       line = "# faces (" + this.getFaces().size() + ")";
       bw.write(line);
       bw.newLine();         
@@ -91,7 +99,11 @@ public class Mesh {
         
         line = "f ";
         for(j=0;j<face.getPoints().size();j++) {          
-          line += face.getPoints().elementAt(j)+1;
+          line += (face.getPoints().elementAt(j)+1);
+          if (face.getUVs().size()==face.getPoints().size()) {
+            line += "/" + (face.getUVs().elementAt(j)+1);
+          }
+          
           line += " ";
         }
         
