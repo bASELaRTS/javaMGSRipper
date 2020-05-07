@@ -56,7 +56,7 @@ public class EMD2 {
         for(i=0;i<this.m_skeleton.count;i++) {
           stream.read(b2);x=Helper.bytesToInt(b2);
           stream.read(b2);y=Helper.bytesToInt(b2);
-          stream.read(b2);z=Helper.bytesToInt(b2);
+          stream.read(b2);z=Helper.bytesToInt(b2);          
           this.m_skeleton.getPositions().add(new Vector3(x,y,z));
         }
         
