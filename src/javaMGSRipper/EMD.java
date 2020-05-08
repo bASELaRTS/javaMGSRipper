@@ -34,7 +34,6 @@ public class EMD {
     int x,y,z;
     long l;
     Directory directory;
-    Vector3 v3;
     
     try {
       stream.seek(0);
@@ -72,8 +71,7 @@ public class EMD {
         ModelMeshOffsets offsets;
         Mesh mesh = new Mesh();
         MeshFace face;
-        int iv1,iv2,iv3,iv4;
-        int in1,in2,in3,in4;
+        int iv1,iv2,iv3,iv4;        
 
         // vertices
         offsets = modelObject.getTriangle();          
@@ -131,11 +129,11 @@ public class EMD {
           stream.seek(l);
           for(j=0;j<offsets.faceCount;j++) {
             face = new MeshFace();
-            stream.read(b2);in1=Helper.bytesToUInt(b2);
+            stream.read(b2);
             stream.read(b2);iv1=Helper.bytesToUInt(b2);
-            stream.read(b2);in2=Helper.bytesToUInt(b2);
+            stream.read(b2);
             stream.read(b2);iv2=Helper.bytesToUInt(b2);
-            stream.read(b2);in3=Helper.bytesToUInt(b2);
+            stream.read(b2);
             stream.read(b2);iv3=Helper.bytesToUInt(b2);
             face.getPoints().add(iv3);
             face.getPoints().add(iv2);
@@ -150,13 +148,13 @@ public class EMD {
           stream.seek(l);
           for(j=0;j<offsets.faceCount;j++) {
             face = new MeshFace();
-            stream.read(b2);in1=Helper.bytesToUInt(b2);
+            stream.read(b2);
             stream.read(b2);iv1=Helper.bytesToUInt(b2);
-            stream.read(b2);in2=Helper.bytesToUInt(b2);
+            stream.read(b2);
             stream.read(b2);iv2=Helper.bytesToUInt(b2);
-            stream.read(b2);in3=Helper.bytesToUInt(b2);
+            stream.read(b2);
             stream.read(b2);iv3=Helper.bytesToUInt(b2);
-            stream.read(b2);in4=Helper.bytesToUInt(b2);
+            stream.read(b2);
             stream.read(b2);iv4=Helper.bytesToUInt(b2);
             face.getPoints().add(iv3);
             face.getPoints().add(iv4);

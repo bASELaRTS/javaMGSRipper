@@ -138,7 +138,7 @@ public class WAD {
     byte b2[] = new byte[2];
     byte b4[] = new byte[4];
     int i,j,argb;
-    int w,h,l,t;    
+    int w,h;    
     int colx[];
     int rowStart;
     int pixelCount;
@@ -151,8 +151,8 @@ public class WAD {
       stream.seek(directory.offset);
       stream.read(b2);w=Helper.bytesToUInt(b2);
       stream.read(b2);h=Helper.bytesToUInt(b2);
-      stream.read(b2);l=Helper.bytesToUInt(b2);
-      stream.read(b2);t=Helper.bytesToUInt(b2);
+      stream.read(b2);//left
+      stream.read(b2);//top
       
       image = new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);
       

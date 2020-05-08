@@ -60,10 +60,11 @@ public class EMD2 {
           this.m_skeleton.getPositions().add(new Vector3(x,y,z));
         }
         
+        stream.seek(directory.offset + this.m_skeleton.offset);
         for(i=0;i<this.m_skeleton.count;i++) {
           stream.read(b2);j=Helper.bytesToUInt(b2);
           stream.read(b2);o=Helper.bytesToUInt(b2);
-          this.m_skeleton.getArmatures().add(new Armature(j,o));
+          this.m_skeleton.getArmatureHeaders().add(new ArmatureHeader(j,o));
         }
       }
       
@@ -448,26 +449,26 @@ public class EMD2 {
     public int size;  
     
     private Vector<Vector3> m_positions;
-    private Vector<Armature> m_armatures;
+    private Vector<ArmatureHeader> m_armaturesHeaders;
     private Vector<Integer> m_meshes;
     
     public ModelSkeleton() {
       this.m_positions = new Vector<Vector3>();
-      this.m_armatures = new Vector<Armature>();
+      this.m_armaturesHeaders = new Vector<ArmatureHeader>();
       this.m_meshes = new Vector<Integer>();
     }
     
     public Vector<Vector3> getPositions(){return this.m_positions;}
-    public Vector<Armature> getArmatures(){return this.m_armatures;}
+    public Vector<ArmatureHeader> getArmatureHeaders(){return this.m_armaturesHeaders;}
     public Vector<Integer> getMeshes(){return this.m_meshes;}
     
   }  
 
-  public class Armature {
+  public class ArmatureHeader {
     public int count;   // number of meshes linked to this one
     public long offset; // relative offset to mesh numbers
     
-    public Armature(int c, long o){
+    public ArmatureHeader(int c, long o){
       this.count=c;
       this.offset=o;
     }
@@ -481,6 +482,7 @@ public class EMD2 {
     EMD2 emd;
     EMD2.ModelObject object;
     EMD2.ModelGeometry geometry;
+    Vector3 v3 = new Vector3();
     
     for(i=0;i<args.length;i++) {
       s = args[i];
@@ -547,9 +549,11 @@ public class EMD2 {
       //*
       ModelSkeleton skeleton = emd.getSkeleton();
       for(i=0;i<skeleton.count;i++) {
+        v3.setVector(skeleton.getPositions().elementAt(i));
+        v3.y = -(v3.y/50.0);
         s = "" + i;
-        s += " " + skeleton.getPositions().elementAt(i).toString();
-        s += " " + skeleton.getArmatures().elementAt(i).count + ";" + skeleton.getArmatures().elementAt(i).offset;
+        s += " " + v3.toString();
+        s += " " + skeleton.getArmatureHeaders().elementAt(i).count + ";" + skeleton.getArmatureHeaders().elementAt(i).offset;
         System.out.println(s);
       }
       /**/
